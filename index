@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI To-Do List</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #FFD700, #FF6B35, #32CD32, #FF69B4);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            min-height: calc(100vh - 40px);
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #FF6B35, #32CD32, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .input-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: #FF6B35;
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
+        }
+
+        .add-btn {
+            background: linear-gradient(45deg, #FF6B35, #32CD32);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .add-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .ai-section {
+            background: linear-gradient(45deg, #FFD700, #FF69B4);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .ai-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .ai-suggestion {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #32CD32;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #32CD32;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .todo-list {
+            margin-bottom: 100px;
+        }
+
+        .todo-item {
+            background: rgba(255, 255, 255, 0.8);
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid #32CD32;
+            transition: all 0.3s ease;
+        }
+
+        .todo-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .todo-item.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+            border-left-color: #ccc;
+        }
+
+        .todo-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .todo-text {
+            flex: 1;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .delete-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background: #ff3742;
+            transform: scale(1.1);
+        }
+
+        .new-list-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #32CD32, #FFD700);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .new-list-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .help-link {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #333;
+            font-size: 14px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .help-link:hover {
+            background: white;
+            transform: translateX(-50%) translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .list-counter {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #666;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ AI To-Do List</h1>
+        
+        <div class="list-counter">
+            List <span id="listNumber">1</span>
+        </div>
+
+        <div class="ai-section">
+            <h3 style="margin-bottom: 15px; color: white;">💡 Get AI Suggestions</h3>
+            <div class="ai-input">
+                <input type="text" id="aiInput" placeholder="Ask AI for task suggestions...">
+                <button class="add-btn" onclick="getAISuggestion()">Ask AI</button>
+            </div>
+            <div class="ai-suggestion" id="aiSuggestion">
+                Ask AI for task suggestions and productivity tips!
+            </div>
+        </div>
+
+        <div class="input-section">
+            <input type="text" id="todoInput" placeholder="Add a new task...">
+            <button class="add-btn" onclick="addTodo()">Add Task</button>
+        </div>
+
+        <div class="todo-list" id="todoList">
+            <!-- Todo items will be added here -->
+        </div>
+
+        <button class="new-list-btn" onclick="createNewList()" title="Create New List">+</button>
+        
+        <a href="#" class="help-link" onclick="showHelp()">Do let me know if you need any help</a>
+    </div>
+
+    <script>
+        // This is the API key - Replace with your actual Gemini API key
+        const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE';
+        
+        let todos = [];
+        let listNumber = 1;
+        let savedLists = [];
+
+        // Load saved data from memory
+        function loadData() {
+            const saved = localStorage.getItem('todoData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                todos = data.todos || [];
+                listNumber = data.listNumber || 1;
+                savedLists = data.savedLists || [];
+                updateListCounter();
+                renderTodos();
+            }
+        }
+
+        // Save data to memory
+        function saveData() {
+            const data = {
+                todos: todos,
+                listNumber: listNumber,
+                savedLists: savedLists
+            };
+            localStorage.setItem('todoData', JSON.stringify(data));
+        }
+
+        function updateListCounter() {
+            document.getElementById('listNumber').textContent = listNumber;
+        }
+
+        function addTodo() {
+            const input = document.getElementById('todoInput');
+            const text = input.value.trim();
+            
+            if (text === '') return;
+            
+            const todo = {
+                id: Date.now(),
+                text: text,
+                completed: false,
+                timestamp: new Date().toLocaleString()
+            };
+            
+            todos.push(todo);
+            input.value = '';
+            renderTodos();
+            saveData();
+        }
+
+        function renderTodos() {
+            const todoList = document.getElementById('todoList');
+            todoList.innerHTML = '';
+            
+            todos.forEach(todo => {
+                const todoItem = document.createElement('div');
+                todoItem.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+                todoItem.innerHTML = `
+                    <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} 
+                           onchange="toggleTodo(${todo.id})">
+                    <span class="todo-text">${todo.text}</span>
+                    <small style="color: #888;">${todo.timestamp}</small>
+                    <button class="delete-btn" onclick="deleteTodo(${todo.id})">Delete</button>
+                `;
+                todoList.appendChild(todoItem);
+            });
+        }
+
+        function toggleTodo(id) {
+            const todo = todos.find(t => t.id === id);
+            if (todo) {
+                todo.completed = !todo.completed;
+                renderTodos();
+                saveData();
+            }
+        }
+
+        function deleteTodo(id) {
+            todos = todos.filter(t => t.id !== id);
+            renderTodos();
+            saveData();
+        }
+
+        function createNewList() {
+            if (todos.length > 0) {
+                // Save current list
+                savedLists.push({
+                    listNumber: listNumber,
+                    todos: [...todos],
+                    createdAt: new Date().toLocaleString()
+                });
+            }
+            
+            // Create new list
+            todos = [];
+            listNumber++;
+            updateListCounter();
+            renderTodos();
+            saveData();
+            
+            // Show confirmation
+            alert(`List ${listNumber - 1} saved! Starting new List ${listNumber}`);
+        }
+
+        async function getAISuggestion() {
+            const input = document.getElementById('aiInput');
+            const suggestion = document.getElementById('aiSuggestion');
+            const text = input.value.trim();
+            
+            if (!text) {
+                alert('Please enter a question for AI!');
+                return;
+            }
+            
+            if (GEMINI_API_KEY === 'AIzaSyBcQCYLSj0Aug2xG7sr0WY8O4LGbPfHmJM') {
+                suggestion.innerHTML = '⚠️ Please add your Gemini API key in the code to use AI features.';
+                return;
+            }
+            
+            suggestion.innerHTML = '<div class="loading"></div> Getting AI suggestion...';
+            
+            try {
+                const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-goog-api-key': GEMINI_API_KEY
+                    },
+                    body: JSON.stringify({
+                        contents: [
+                            {
+                                parts: [
+                                    {
+                                        text: text
+                                    }
+                                ]
+                            }
+                        ]
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                    const aiResponse = data.candidates[0].content.parts[0].text;
+                    suggestion.innerHTML = `<strong>Following is the suggestion:</strong><br><br>${aiResponse}`;
+                } else {
+                    suggestion.innerHTML = '❌ Sorry, I couldn\'t get a suggestion. Please try again.';
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                suggestion.innerHTML = '❌ Error getting AI suggestion. Please check your API key and try again.';
+            }
+            
+            input.value = '';
+        }
+
+        function showHelp() {
+            alert(`Welcome to AI To-Do List! 🌟
+
+Features:
+• Add tasks using the input field
+• Get AI suggestions for productivity
+• Check off completed tasks
+• Delete unwanted tasks
+• Create new lists (saves current list automatically)
+• All data is stored locally in your browser
+
+Tips:
+• Try asking AI: "Give me 5 morning routine tasks"
+• Or: "What should I do to be more productive?"
+• Click the + button to start a fresh list
+• Your previous lists are automatically saved!
+
+Need more help? Feel free to ask! 😊`);
+        }
+
+        // Event listeners
+        document.getElementById('todoInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTodo();
+            }
+        });
+
+        document.getElementById('aiInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                getAISuggestion();
+            }
+        });
+
+        // Load data when page loads
+        loadData();
+    </script>
+</body>
+</html>
